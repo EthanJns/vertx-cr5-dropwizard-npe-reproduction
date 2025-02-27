@@ -43,21 +43,29 @@ public class MainVerticle extends AbstractVerticle {
 
     this.webclient = WebClient.create(vertx, webOptions);
 
-    vertx.createHttpServer().requestHandler(req -> {
+    this.startHttpServer().onComplete(u -> makeHttpRequest());
+  }
+
+  public Future<?> startHttpServer() {
+    return vertx.createHttpServer().requestHandler(req -> {
       req.response()
           .putHeader("content-type", "text/plain")
           .end("Hello from Vert.x!");
-    }).listen(8888).onSuccess(http -> {
-      HttpRequest<Buffer> request = this.webclient.getAbs("https://localhost:8443/");
-      request.putHeader(HttpHeaders.CONTENT_LENGTH.toString(), Integer.toString(0));
-      request.putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json");
-      request.send().onComplete(ar -> {
-        if (ar.succeeded()) {
-          System.out.println("This should fail as nothing is running on that port");
-        } else {
-          System.out.println("In my testing/example, this is what we should see when the NPE isnt thrown");
-        }
-      });
+    }).listen(8080).onSuccess(http -> {
+      System.out.println("HttpServer Now Listening on port 8080");
+    });
+  }
+
+  public Future<?> makeHttpRequest() {
+    HttpRequest<Buffer> request = this.webclient.getAbs("https://localhost:8443/");
+    request.putHeader(HttpHeaders.CONTENT_LENGTH.toString(), Integer.toString(0));
+    request.putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json");
+    return request.send().onComplete(ar -> {
+      if (ar.succeeded()) {
+        System.out.println("This should fail as nothing is running on that port");
+      } else {
+        System.out.println("In my testing/example, this is what we should see when the NPE isnt thrown");
+      }
     });
   }
 }
